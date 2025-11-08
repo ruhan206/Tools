@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Converter Tool</title>
+  <style>
+    :root {
+      --primary-blue: #007bff;
+      --light-blue: #e6f2ff;
+      --white: #ffffff;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--light-blue);
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background-color: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      max-width: 400px;
+      width: 100%;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      text-align: center;
+      color: var(--primary-blue);
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    input[type="file"], select, input[type="range"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .range-value {
+      text-align: right;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+    .preview {
+      text-align: center;
+      margin: 1rem 0;
+    }
+    .preview img {
+      max-width: 100%;
+      border-radius: 8px;
+      display: inline-block;
+    }
+    button {
+      background-color: var(--primary-blue);
+      color: var(--white);
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .download-link {
+      display: block;
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+      color: var(--primary-blue);
+      text-decoration: none;
+    }
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Converter</h1>
+    <div class="form-group">
+      <label for="imageInput">Upload Image</label>
+      <input type="file" id="imageInput" accept="image/*" />
+    </div>
+    <div class="form-group">
+      <label for="formatSelect">Convert To</label>
+      <select id="formatSelect">
+        <option value="image/jpeg">JPEG</option>
+        <option value="image/png">PNG</option>
+        <option value="image/webp">WEBP</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="qualityRange">Quality (<span id="qualityValue">0.8</span>)</label>
+      <input type="range" id="qualityRange" min="0.1" max="1" step="0.1" value="0.8" />
+    </div>
+    <div class="preview" id="previewContainer">
+      <!-- Preview will appear here -->
+    </div>
+    <button id="convertBtn">Convert & Download</button>
+    <a id="downloadLink" class="download-link" href="#" download="converted-image">Download Image</a>
+  </div>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const formatSelect = document.getElementById('formatSelect');
+    const qualityRange = document.getElementById('qualityRange');
+    const qualityValue = document.getElementById('qualityValue');
+    const previewContainer = document.getElementById('previewContainer');
+    const convertBtn = document.getElementById('convertBtn');
+    const downloadLink = document.getElementById('downloadLink');
+
+    let originalImage = new Image();
+
+    qualityRange.addEventListener('input', () => {
+      qualityValue.textContent = qualityRange.value;
+    });
+
+    imageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        originalImage.src = event.target.result;
+        originalImage.onload = () => {
+          previewContainer.innerHTML = '';
+          previewContainer.appendChild(originalImage);
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+
+    convertBtn.addEventListener('click', () => {
+      if (!originalImage.src) {
+        alert('Please upload an image first.');
+        return;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = originalImage.naturalWidth;
+      canvas.height = originalImage.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(originalImage, 0, 0);
+
+      const mimeType = formatSelect.value;
+      const quality = parseFloat(qualityRange.value);
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = `converted-image.${mimeType.split('/')[1]}`;
+        downloadLink.style.display = 'block';
+        // also preview the converted image
+        const convertedImg = new Image();
+        convertedImg.src = url;
+        convertedImg.onload = () => {
+          previewContainer.innerHTML = '';
+          previewContainer.appendChild(convertedImg);
+        };
+      }, mimeType, quality);
+    });
+
+    // Hide download link initially
+    downloadLink.style.display = 'none';
+  </script>
+</body>
+</html>

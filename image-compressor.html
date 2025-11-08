@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Compressor</title>
+  <style>
+    /* Bright blue and white theme */
+    :root {
+      --primary-blue: #007BFF;
+      --bg-white: #FFFFFF;
+      --text-dark: #333;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-white);
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: var(--primary-blue);
+      text-align: center;
+    }
+    .compressor {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-white);
+      border: 2px solid var(--primary-blue);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .compressor label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .compressor input[type="file"] {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    .compressor button {
+      background-color: var(--primary-blue);
+      color: var(--bg-white);
+      border: none;
+      padding: 10px 15px;
+      font-size: 1em;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      margin: 10px 0;
+    }
+    .compressor button:disabled {
+      background: lightgray;
+      cursor: not-allowed;
+    }
+    .compressor img {
+      max-width: 100%;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .quality-control {
+      margin-bottom: 15px;
+    }
+    .quality-control input {
+      width: 100%;
+    }
+    .download-link {
+      display: none;
+      text-decoration: none;
+      background: var(--primary-blue);
+      color: var(--bg-white);
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+      .compressor {
+        padding: 15px;
+      }
+      .compressor button, .download-link {
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Image Compressor</h1>
+  <div class="compressor">
+    <label for="imageInput">Select an image:</label>
+    <input type="file" id="imageInput" accept="image/*">
+    <div class="quality-control">
+      <label for="qualityRange">Quality: <span id="qualityValue">80%</span></label>
+      <input type="range" id="qualityRange" min="10" max="100" value="80">
+    </div>
+    <img id="preview" alt="Image preview will appear here">
+    <button id="compressBtn" disabled>Compress Image</button>
+    <a id="downloadLink" class="download-link">Download Compressed Image</a>
+  </div>
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const preview = document.getElementById('preview');
+    const compressBtn = document.getElementById('compressBtn');
+    const downloadLink = document.getElementById('downloadLink');
+    const qualityRange = document.getElementById('qualityRange');
+    const qualityValue = document.getElementById('qualityValue');
+
+    let originalImage = new Image();
+    let canvas = document.createElement('canvas');
+    let ctx = canvas.getContext('2d');
+
+    imageInput.addEventListener('change', () => {
+      const file = imageInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        originalImage.src = e.target.result;
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        compressBtn.disabled = false;
+        downloadLink.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    qualityRange.addEventListener('input', () => {
+      qualityValue.textContent = qualityRange.value + '%';
+    });
+
+    compressBtn.addEventListener('click', () => {
+      const quality = qualityRange.value / 100;
+      canvas.width = originalImage.naturalWidth;
+      canvas.height = originalImage.naturalHeight;
+      ctx.drawImage(originalImage, 0, 0);
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadLink.download = 'compressed-image.jpg';
+        downloadLink.style.display = 'block';
+      }, 'image/jpeg', quality);
+    });
+  </script>
+</body>
+</html>
