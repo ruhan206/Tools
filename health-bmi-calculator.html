@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BMI & Health Calculator</title>
+  <style>
+    :root{
+      --primary-blue:#007bff;
+      --light-blue:#e6f2ff;
+      --white:#fff;
+      --muted:#666;
+      --success:#198754;
+      --warning:#fd7e14;
+      --danger:#dc3545;
+      --card-radius:12px;
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family:Arial,Helvetica,sans-serif;
+      background:var(--light-blue);
+      margin:0;
+      padding:24px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+    }
+    .container{
+      width:100%;
+      max-width:920px;
+      display:flex;
+      gap:20px;
+      align-items:flex-start;
+    }
+    .card{
+      background:var(--white);
+      border-radius:var(--card-radius);
+      box-shadow:0 6px 22px rgba(0,0,0,0.08);
+      padding:18px;
+    }
+
+    /* Left: inputs */
+    .left{width:420px}
+    h1{color:var(--primary-blue);text-align:center;margin:0 0 12px 0;font-size:1.3rem}
+    .row{display:flex;gap:8px}
+    .form-group{margin-bottom:10px}
+    label{display:block;font-weight:700;margin-bottom:6px;font-size:0.9rem}
+    input[type="number"], input[type="text"], select{
+      width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;font-size:0.95rem;
+    }
+    .small{font-size:0.86rem;color:var(--muted)}
+    .toggle {
+      display:inline-flex;
+      border-radius:8px;
+      overflow:hidden;
+      border:1px solid #d6e9ff;
+    }
+    .toggle button{
+      padding:8px 10px;border:0;background:transparent;color:var(--primary-blue);cursor:pointer;font-weight:700;
+    }
+    .toggle button.active{background:var(--primary-blue);color:#fff}
+
+    button.primary{
+      width:100%;padding:10px;border-radius:8px;border:0;background:var(--primary-blue);color:#fff;font-weight:700;
+      cursor:pointer;margin-top:6px;
+    }
+    button.ghost{background:transparent;border:1px solid #eee;padding:8px;border-radius:8px;cursor:pointer}
+
+    /* Right: result / preview */
+    .right{flex:1;min-width:300px}
+    .result-card{
+      max-width:520px;width:100%;
+      border-radius:var(--card-radius);
+      padding:18px;
+      background:linear-gradient(180deg,#fff,#fcfdff);
+      text-align:center;
+    }
+    .result-title{font-size:1.25rem;font-weight:800;color:var(--primary-blue);margin-bottom:8px}
+    .result-line{font-size:1.05rem;margin-top:6px}
+    .bmi-value{font-size:2.1rem;font-weight:900;margin-top:6px}
+    .category{font-size:1rem;font-weight:800;margin-top:6px}
+    .range{font-size:0.98rem;color:var(--muted);margin-top:6px}
+    .tips{text-align:left;margin-top:12px;padding-top:10px;border-top:1px dashed #eee}
+    .tips h3{margin:0 0 8px 0;font-size:1rem}
+    .tip-section{margin-bottom:10px}
+    .tip-section ul{margin:6px 0 0 18px}
+    .download-row{display:flex;gap:8px;justify-content:center;margin-top:12px}
+    .download-row button{flex:1;padding:8px;border-radius:8px;border:0;cursor:pointer}
+    .download-row button.png{background:#0d6efd;color:#fff}
+    .download-row button.jpg{background:#20c997;color:#fff}
+
+    /* status colors */
+    .cat-under{color:var(--warning)}
+    .cat-normal{color:var(--success)}
+    .cat-over{color:var(--warning)}
+    .cat-obese{color:var(--danger)}
+
+    @media (max-width:920px){
+      .container{flex-direction:column;padding:12px}
+      .left{width:100%}
+      .right{width:100%}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- LEFT: inputs -->
+    <div class="card left">
+      <h1>BMI & Health Calculator</h1>
+
+      <div class="form-group">
+        <label>Units</label>
+        <div class="toggle" id="unitToggle">
+          <button data-unit="imperial" class="active">Imperial</button>
+          <button data-unit="metric">Metric</button>
+        </div>
+        <div class="small" style="margin-top:6px">Imperial = pounds / feet + inches. Metric = kg / cm.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="age">Age (years)</label>
+        <input id="age" type="number" min="1" max="120" placeholder="e.g. 34" />
+      </div>
+
+      <div class="form-group">
+        <label for="gender">Gender</label>
+        <select id="gender">
+          <option value="other">Other / Prefer not to say</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+
+      <!-- Imperial inputs group -->
+      <div id="imperialInputs">
+        <div class="form-group">
+          <label for="weightImp">Weight (pounds)</label>
+          <input id="weightImp" type="number" min="1" placeholder="e.g. 180" />
+        </div>
+        <div class="row">
+          <div class="form-group" style="flex:1">
+            <label for="heightFeet">Height (feet)</label>
+            <input id="heightFeet" type="number" min="0" placeholder="5" />
+          </div>
+          <div class="form-group" style="width:120px">
+            <label for="heightInches">Inches</label>
+            <input id="heightInches" type="number" min="0" max="11" placeholder="9" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Metric inputs group -->
+      <div id="metricInputs" style="display:none">
+        <div class="form-group">
+          <label for="weightMet">Weight (kg)</label>
+          <input id="weightMet" type="number" min="1" step="0.1" placeholder="e.g. 82" />
+        </div>
+        <div class="form-group">
+          <label for="heightCm">Height (cm)</label>
+          <input id="heightCm" type="number" min="30" placeholder="e.g. 175" />
+        </div>
+      </div>
+
+      <button class="primary" id="calcBtn">Calculate BMI</button>
+
+      <div style="margin-top:12px">
+        <div class="small">Tip: Suggestions below are general. For medical advice consult a professional.</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: result / preview -->
+    <div class="right">
+      <div class="card result-card" id="resultPanel">
+        <div class="result-title">Your Results</div>
+
+        <div id="resultContent">
+          <div class="result-line">Age: <span id="outAge">—</span> • Gender: <span id="outGender">—</span></div>
+          <div class="result-line">Units: <span id="outUnit">—</span></div>
+          <div class="bmi-value" id="bmiValue">—</div>
+          <div class="category" id="bmiCategory">—</div>
+          <div class="range" id="weightRange">Healthy weight range: —</div>
+
+          <div class="tips" id="tips">
+            <h3>Diet & Exercise Suggestions</h3>
+
+            <div class="tip-section" id="dietSection">
+              <strong>Diet:</strong>
+              <ul id="dietList">
+                <li>—</li>
+              </ul>
+            </div>
+
+            <div class="tip-section" id="exerciseSection">
+              <strong>Exercise:</strong>
+              <ul id="exerciseList">
+                <li>—</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="download-row" style="margin-top:10px">
+            <button class="png" id="downloadPng">Download PNG</button>
+            <button class="jpg" id="downloadJpg">Download JPG</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Elements
+  const unitToggle = document.getElementById('unitToggle');
+  const imperialInputs = document.getElementById('imperialInputs');
+  const metricInputs = document.getElementById('metricInputs');
+  const ageInput = document.getElementById('age');
+  const genderInput = document.getElementById('gender');
+
+  // Imperial
+  const weightImp = document.getElementById('weightImp');
+  const heightFeet = document.getElementById('heightFeet');
+  const heightInches = document.getElementById('heightInches');
+
+  // Metric
+  const weightMet = document.getElementById('weightMet');
+  const heightCm = document.getElementById('heightCm');
+
+  const calcBtn = document.getElementById('calcBtn');
+
+  // Output
+  const outAge = document.getElementById('outAge');
+  const outGender = document.getElementById('outGender');
+  const outUnit = document.getElementById('outUnit');
+  const bmiValue = document.getElementById('bmiValue');
+  const bmiCategory = document.getElementById('bmiCategory');
+  const weightRange = document.getElementById('weightRange');
+  const dietList = document.getElementById('dietList');
+  const exerciseList = document.getElementById('exerciseList');
+
+  // Download buttons
+  const downloadPng = document.getElementById('downloadPng');
+  const downloadJpg = document.getElementById('downloadJpg');
+  const resultPanel = document.getElementById('resultPanel');
+
+  // State
+  let unit = 'imperial';
+  function setUnit(u){
+    unit = u;
+    if (u === 'imperial'){
+      imperialInputs.style.display = '';
+      metricInputs.style.display = 'none';
+    } else {
+      imperialInputs.style.display = 'none';
+      metricInputs.style.display = '';
+    }
+    // toggle active classes
+    unitToggle.querySelectorAll('button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.unit === u);
+    });
+  }
+
+  // Unit toggle click
+  unitToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    setUnit(btn.dataset.unit);
+  });
+
+  // Helper: compute BMI, range & suggestions
+  function calculateFromInputs(){
+    const age = parseInt(ageInput.value) || null;
+    const gender = genderInput.value || 'other';
+
+    outAge.textContent = age ? age : '—';
+    outGender.textContent = (gender === 'male' ? 'Male' : (gender === 'female' ? 'Female' : 'Other'));
+    outUnit.textContent = unit === 'imperial' ? 'Imperial' : 'Metric';
+
+    let bmi = null;
+    let minW = null, maxW = null; // healthy range in same unit as weight input (lbs or kg)
+    let heightMeters = null;
+
+    if (unit === 'imperial'){
+      const w = parseFloat(weightImp.value);
+      const feet = parseFloat(heightFeet.value);
+      const inches = parseFloat(heightInches.value) || 0;
+      if (!w || !feet){ return {ok:false, msg:'Enter valid imperial height & weight'}; }
+      const totalInches = (feet * 12) + inches;
+      if (totalInches <= 0) return {ok:false, msg:'Invalid height'};
+      bmi = (703 * w) / (totalInches * totalInches);
+      // healthy range: compute in lbs using BMI = 18.5..24.9
+      minW = 18.5 * (totalInches * totalInches) / 703;
+      maxW = 24.9 * (totalInches * totalInches) / 703;
+      // for some suggestions calculations convert to meters/kg
+      heightMeters = totalInches * 0.0254;
+    } else {
+      const w = parseFloat(weightMet.value);
+      const cm = parseFloat(heightCm.value);
+      if (!w || !cm) return {ok:false, msg:'Enter valid metric height & weight'};
+      const m = cm / 100;
+      if (m <= 0) return {ok:false, msg:'Invalid height'};
+      bmi = w / (m * m);
+      minW = 18.5 * (m * m);
+      maxW = 24.9 * (m * m);
+      heightMeters = m;
+    }
+
+    return {ok:true, bmi, minW, maxW, age, gender, heightMeters};
+  }
+
+  function classifyBMI(bmi){
+    if (bmi < 18.5) return {cat:'Underweight','class':'cat-under',emoji:'😕'};
+    if (bmi < 25) return {cat:'Normal weight','class':'cat-normal',emoji:'😊'};
+    if (bmi < 30) return {cat:'Overweight','class':'cat-over',emoji:'😐'};
+    return {cat:'Obese','class':'cat-obese',emoji:'😟'};
+  }
+
+  // Provide diet & exercise suggestions based on BMI category, age, gender
+  function suggestionsFor({bmi, age, gender, heightMeters}){
+    const c = classifyBMI(bmi).cat;
+    // Diet base suggestions
+    let diet = [];
+    let exercise = [];
+
+    // Common safe advice (non-medical)
+    if (c === 'Underweight'){
+      diet.push('Increase calorie intake with nutrient-dense foods: nuts, avocados, whole grains, lean proteins.');
+      diet.push('Eat 5–6 small meals daily and include smoothies or shakes between meals.');
+      diet.push('Include protein-rich foods (eggs, dairy, legumes) to support muscle gain.');
+      exercise.push('Focus on strength training 2–4×/week to build lean mass (compound lifts, bodyweight progressions).');
+      exercise.push('Keep cardio moderate—short sessions 2×/week.');
+    } else if (c === 'Normal weight'){
+      diet.push('Maintain balanced diet: vegetables, fruits, lean protein, whole grains and healthy fats.');
+      diet.push('Watch portion sizes and prefer whole, minimally processed foods.');
+      exercise.push('Mix cardio (150 min moderate/week) and strength 2–3×/week to maintain fitness.');
+      exercise.push('Include mobility or yoga 1–2×/week.');
+    } else if (c === 'Overweight'){
+      diet.push('Aim for a moderate calorie deficit (~300–500 kcal/day) with high protein and fiber to preserve muscle.');
+      diet.push('Prioritize whole foods, reduce sugary drinks & refined carbs, and control portion size.');
+      exercise.push('Combine cardio (30–60 min most days) and resistance training 3×/week.');
+      exercise.push('Try interval training (HIIT) if fitness level allows and cleared by a doctor.');
+    } else { // Obese
+      diet.push('Consider structured calorie deficit under guidance; focus on high-protein, high-fiber, low-refined-carb meals.');
+      diet.push('Reduce sugary beverages and ultra-processed foods; increase vegetables and lean protein.');
+      exercise.push('Start with low-impact cardio (walking, cycling, swimming) 3–5×/week and gradually increase duration.');
+      exercise.push('Add gentle strength work 2×/week; consult a healthcare provider before intensive programs.');
+    }
+
+    // Age/Gender tuning (simple, conservative adjustments)
+    if (age && age >= 60){
+      diet.push('Ensure adequate protein and calcium/vitamin D for bone & muscle health.');
+      exercise.push('Prioritize balance and mobility exercises to reduce fall risk (tai chi, stability work).');
+    } else if (age && age < 18){
+      diet.push('Ensure calories and nutrients to support growth — consult pediatrician for tailored guidance.');
+      exercise.push('Encourage varied physical activity and skill-based play; strength training only under supervision.');
+    }
+
+    if (gender === 'female'){
+      diet.push('Include iron-rich foods (leafy greens, legumes) and calcium sources as needed.');
+    } else if (gender === 'male'){
+      // small note
+      diet.push('Monitor portion sizes — men often need higher calorie targets but still benefit from controlled portions for weight goals.');
+    }
+
+    // Short actionable bullets (limit to 6 each)
+    const uniq = arr => Array.from(new Set(arr)).slice(0,6);
+    return {diet: uniq(diet), exercise: uniq(exercise)};
+  }
+
+  // Update UI with results
+  function updateUI(){
+    const data = calculateFromInputs();
+    if (!data.ok){
+      // show placeholders / message
+      bmiValue.textContent = '—';
+      bmiCategory.textContent = data.msg || '—';
+      bmiCategory.className = 'category';
+      weightRange.textContent = 'Healthy weight range: —';
+      dietList.innerHTML = '<li>—</li>';
+      exerciseList.innerHTML = '<li>—</li>';
+      return;
+    }
+
+    const bmi = data.bmi;
+    const minW = data.minW;
+    const maxW = data.maxW;
+    const unitLabel = unit === 'imperial' ? 'lbs' : 'kg';
+    bmiValue.textContent = bmi.toFixed(1);
+    const cls = classifyBMI(bmi);
+    bmiCategory.textContent = `${cls.cat} ${cls.emoji}`;
+    bmiCategory.className = 'category ' + cls.class;
+
+    weightRange.textContent = `Healthy weight range: ${minW.toFixed(1)} – ${maxW.toFixed(1)} ${unitLabel}`;
+
+    // suggestions
+    const sug = suggestionsFor(data);
+    dietList.innerHTML = sug.diet.map(d => `<li>${escapeHtml(d)}</li>`).join('');
+    exerciseList.innerHTML = sug.exercise.map(d => `<li>${escapeHtml(d)}</li>`).join('');
+  }
+
+  // Utility to escape text for HTML
+  function escapeHtml(s){
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+  }
+
+  // Wire the calculate button
+  calcBtn.addEventListener('click', (e) => {
+    updateUI();
+    // scroll result into view on small screens
+    resultPanel.scrollIntoView({behavior:'smooth',block:'center'});
+  });
+
+  // Also recalc on pressing Enter in inputs
+  document.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('keydown', (ev)=>{
+      if (ev.key === 'Enter') { ev.preventDefault(); updateUI(); }
+    });
+  });
+
+  // Initialize default values for demo
+  setUnit('imperial');
+  // optional: fill demo values
+  weightImp.value = '';
+  heightFeet.value = '';
+  heightInches.value = '';
+
+  // === Export result as PNG/JPG ===
+  // We'll serialize the resultPanel into an SVG using foreignObject and render it onto canvas.
+  function exportResultImage(format = 'png'){
+    // get computed dimensions
+    const w = resultPanel.offsetWidth;
+    const h = resultPanel.offsetHeight;
+
+    // Clone the panel to remove interactive controls and ensure fonts/styles
+    const clone = resultPanel.cloneNode(true);
+
+    // Remove download buttons inside clone (if present)
+    const downloads = clone.querySelector('.download-row');
+    if (downloads) downloads.remove();
+
+    // Inline computed fonts & simple page styles to SVG
+    // Build CSS string from document styles we want to preserve (basic)
+    const css = `
+      body{font-family:Arial,Helvetica,sans-serif}
+      .result-card{background:linear-gradient(180deg,#fff,#fcfdff);padding:18px;border-radius:12px}
+      .result-title{color: ${getComputedStyle(document.documentElement).getPropertyValue('--primary-blue') || '#007bff'}; font-weight:800; font-size:1.1rem;}
+      .bmi-value{font-size:2.1rem; font-weight:900; margin-top:6px}
+      .category{font-size:1rem; font-weight:800; margin-top:6px}
+      .range{font-size:0.95rem; color:#666; margin-top:6px}
+      .tips{margin-top:12px; padding-top:10px; border-top:1px dashed #eee; text-align:left}
+      .tips h3{margin:0 0 8px 0}
+      .tips ul{margin:6px 0 0 18px; padding:0}
+      .tips li{margin-bottom:6px}
+    `;
+
+    // Wrap clone's HTML
+    const serializer = new XMLSerializer();
+    // Need to inline style attributes for the clone to preserve rounded corners / layout in SVG rendering.
+    // For simplicity, we'll embed the whole clone inside a foreignObject preserving inner HTML and include CSS.
+    const foreign = `
+      <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="width:${w}px;height:${h}px;">
+          <style>${css}</style>
+          ${serializer.serializeToString(clone)}
+        </div>
+      </foreignObject>
+    `;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">${foreign}</svg>`;
+    const svgBlob = new Blob([svg], {type: 'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    // Handle cross-origin for some browsers
+    img.onload = function(){
+      // Create canvas and draw image
+      const canvas = document.createElement('canvas');
+      canvas.width = w * 2; // improve resolution
+      canvas.height = h * 2;
+      const ctx = canvas.getContext('2d');
+      // white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      URL.revokeObjectURL(url);
+
+      // Get blob and trigger download
+      if (format === 'png'){
+        canvas.toBlob(function(blob){
+          triggerDownload(blob, 'bmi-result.png');
+        }, 'image/png');
+      } else {
+        // jpg
+        canvas.toBlob(function(blob){
+          triggerDownload(blob, 'bmi-result.jpg');
+        }, 'image/jpeg', 0.92);
+      }
+    };
+    img.onerror = function(){
+      URL.revokeObjectURL(url);
+      alert('Export failed — your browser may block the SVG foreignObject method. Try using a modern browser (Chrome/Edge/Firefox).');
+    };
+
+    img.src = url;
+  }
+
+  function triggerDownload(blob, filename){
+    const a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 5000);
+  }
+
+  downloadPng.addEventListener('click', ()=> {
+    updateUI();
+    exportResultImage('png');
+  });
+  downloadJpg.addEventListener('click', ()=> {
+    updateUI();
+    exportResultImage('jpg');
+  });
+
+  // initial UI clear
+  updateUI();
+</script>
+</body>
+</html>
