@@ -1,110 +1,143 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-<meta charset="UTF-8">
-<title>গরম মসলা ক্যালকুলেটর PRO</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>গরম মসলা ক্যালকুলেটর</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #333;
+    }
 
-<style>
-body { font-family: Arial; background:#f2f2f2; padding:20px; }
-.box { background:white; padding:20px; border-radius:10px; max-width:500px; margin:auto; }
-input { width:100%; padding:8px; margin:5px 0; }
-button { padding:10px; margin:5px; cursor:pointer; }
-h2 { text-align:center; }
-</style>
+    .container {
+      max-width: 400px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #667eea;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #5a67d8;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .result {
+      margin-top: 20px;
+    }
+
+    .card {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 15px;
+      color: #888;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="box">
-<h2>🌿 গরম মসলা ক্যালকুলেটর</h2>
+<div class="container">
+  <h2>🌿 গরম মসলা</h2>
 
-<label>মোট পরিমাণ (গ্রাম):</label>
-<input type="number" id="total" oninput="calculate()">
+  <input type="number" id="total" placeholder="মোট পরিমাণ (গ্রাম)">
 
-<h3>💰 প্রতি কেজি দাম (৳)</h3>
-<div id="priceInputs"></div>
+  <button onclick="calculate()">হিসাব করুন</button>
 
-<div id="output"></div>
+  <div class="toggle">
+    <input type="checkbox" id="round"> &nbsp; Round Number
+  </div>
 
-<button onclick="printPage()">🖨️ Print</button>
-<button onclick="downloadPDF()">📄 PDF</button>
-<button onclick="downloadExcel()">📊 Excel</button>
+  <div class="result" id="result"></div>
 
+  <div class="footer">Made with ❤️</div>
 </div>
 
 <script>
-
-// Use safe keys (English)
-let items = [
-    {name:"জিরা", key:"jeera", qty:100},
-    {name:"ধনিয়া", key:"dhania", qty:50},
-    {name:"এলাচ", key:"elaichi", qty:25},
-    {name:"দারুচিনি", key:"daruchini", qty:25},
-    {name:"লবঙ্গ", key:"lobongo", qty:12.5},
-    {name:"গোলমরিচ", key:"golmorich", qty:12.5},
-    {name:"তেজপাতা", key:"tejpata", qty:10},
-    {name:"শাহী জিরা", key:"shahijeera", qty:6},
-    {name:"জয়ফল", key:"joyfol", qty:5},
-    {name:"জয়ত্রী", key:"joytri", qty:4}
-];
-
-// Create price inputs
-let priceDiv = document.getElementById("priceInputs");
-items.forEach(i => {
-    priceDiv.innerHTML += `${i.name}: <input type="number" id="price_${i.key}" oninput="calculate()"><br>`;
-});
-
 function calculate() {
-    let total = document.getElementById("total").value;
-    if (!total || total <= 0) return;
+  let total = parseFloat(document.getElementById("total").value);
+  let round = document.getElementById("round").checked;
 
-    let ratio = total / 250;
-    let output = "<h3>📋 প্রয়োজনীয় উপকরণ:</h3>";
+  if (!total || total <= 0) {
+    alert("সঠিক পরিমাণ দিন!");
+    return;
+  }
 
-    let totalCost = 0;
-    window.resultData = [];
+  const ingredients = [
+    { name: "জিরা", ratio: 0.40 },
+    { name: "ধনিয়া", ratio: 0.20 },
+    { name: "এলাচ", ratio: 0.10 },
+    { name: "দারুচিনি", ratio: 0.10 },
+    { name: "লবঙ্গ", ratio: 0.05 },
+    { name: "গোলমরিচ", ratio: 0.05 },
+    { name: "তেজপাতা", ratio: 0.04 },
+    { name: "শাহী জিরা", ratio: 0.024 },
+    { name: "জয়ফল", ratio: 0.02 },
+    { name: "জয়ত্রী", ratio: 0.016 }
+  ];
 
-    items.forEach(i => {
-        let qty = i.qty * ratio;
-        let price = parseFloat(document.getElementById("price_"+i.key).value) || 0;
+  let resultDiv = document.getElementById("result");
+  resultDiv.innerHTML = "";
 
-        let cost = (qty / 1000) * price;
-        totalCost += cost;
+  ingredients.forEach(item => {
+    let amount = total * item.ratio;
+    amount = round ? Math.round(amount) : amount.toFixed(2);
 
-        output += `${i.name}: ${qty.toFixed(2)} g | খরচ: ৳${cost.toFixed(2)}<br>`;
-
-        resultData.push([i.name, qty.toFixed(2), cost.toFixed(2)]);
-    });
-
-    output += "<hr><b>মোট খরচ: ৳" + totalCost.toFixed(2) + "</b>";
-
-    document.getElementById("output").innerHTML = output;
+    resultDiv.innerHTML += `
+      <div class="card">
+        <span>${item.name}</span>
+        <span>${amount} g</span>
+      </div>
+    `;
+  });
 }
-
-// Print
-function printPage() {
-    window.print();
-}
-
-// PDF
-function downloadPDF() {
-    const { jsPDF } = window.jspdf;
-    let doc = new jsPDF();
-    doc.text(document.getElementById("output").innerText, 10, 10);
-    doc.save("garam_masala.pdf");
-}
-
-// Excel
-function downloadExcel() {
-    let wb = XLSX.utils.book_new();
-    let ws = XLSX.utils.aoa_to_sheet([["Item", "Qty (g)", "Cost"]] .concat(resultData));
-    XLSX.utils.book_append_sheet(wb, ws, "Masala");
-    XLSX.writeFile(wb, "garam_masala.xlsx");
-}
-
 </script>
 
 </body>
