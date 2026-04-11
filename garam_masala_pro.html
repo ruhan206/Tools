@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>গরম মসলা ক্যালকুলেটর PRO</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body { font-family: Arial; background:#f2f2f2; padding:20px; }
+.box { background:white; padding:20px; border-radius:10px; max-width:500px; margin:auto; }
+input { width:100%; padding:8px; margin:5px 0; }
+button { padding:10px; margin:5px; cursor:pointer; }
+h2 { text-align:center; }
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>🌿 গরম মসলা ক্যালকুলেটর</h2>
+
+<label>মোট পরিমাণ (গ্রাম):</label>
+<input type="number" id="total" oninput="calculate()">
+
+<h3>💰 প্রতি কেজি দাম (৳)</h3>
+<div id="priceInputs"></div>
+
+<div id="output"></div>
+
+<button onclick="printPage()">🖨️ Print</button>
+<button onclick="downloadPDF()">📄 PDF</button>
+<button onclick="downloadExcel()">📊 Excel</button>
+
+</div>
+
+<script>
+
+// Use safe keys (English)
+let items = [
+    {name:"জিরা", key:"jeera", qty:100},
+    {name:"ধনিয়া", key:"dhania", qty:50},
+    {name:"এলাচ", key:"elaichi", qty:25},
+    {name:"দারুচিনি", key:"daruchini", qty:25},
+    {name:"লবঙ্গ", key:"lobongo", qty:12.5},
+    {name:"গোলমরিচ", key:"golmorich", qty:12.5},
+    {name:"তেজপাতা", key:"tejpata", qty:10},
+    {name:"শাহী জিরা", key:"shahijeera", qty:6},
+    {name:"জয়ফল", key:"joyfol", qty:5},
+    {name:"জয়ত্রী", key:"joytri", qty:4}
+];
+
+// Create price inputs
+let priceDiv = document.getElementById("priceInputs");
+items.forEach(i => {
+    priceDiv.innerHTML += `${i.name}: <input type="number" id="price_${i.key}" oninput="calculate()"><br>`;
+});
+
+function calculate() {
+    let total = document.getElementById("total").value;
+    if (!total || total <= 0) return;
+
+    let ratio = total / 250;
+    let output = "<h3>📋 প্রয়োজনীয় উপকরণ:</h3>";
+
+    let totalCost = 0;
+    window.resultData = [];
+
+    items.forEach(i => {
+        let qty = i.qty * ratio;
+        let price = parseFloat(document.getElementById("price_"+i.key).value) || 0;
+
+        let cost = (qty / 1000) * price;
+        totalCost += cost;
+
+        output += `${i.name}: ${qty.toFixed(2)} g | খরচ: ৳${cost.toFixed(2)}<br>`;
+
+        resultData.push([i.name, qty.toFixed(2), cost.toFixed(2)]);
+    });
+
+    output += "<hr><b>মোট খরচ: ৳" + totalCost.toFixed(2) + "</b>";
+
+    document.getElementById("output").innerHTML = output;
+}
+
+// Print
+function printPage() {
+    window.print();
+}
+
+// PDF
+function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+    doc.text(document.getElementById("output").innerText, 10, 10);
+    doc.save("garam_masala.pdf");
+}
+
+// Excel
+function downloadExcel() {
+    let wb = XLSX.utils.book_new();
+    let ws = XLSX.utils.aoa_to_sheet([["Item", "Qty (g)", "Cost"]] .concat(resultData));
+    XLSX.utils.book_append_sheet(wb, ws, "Masala");
+    XLSX.writeFile(wb, "garam_masala.xlsx");
+}
+
+</script>
+
+</body>
+</html>
